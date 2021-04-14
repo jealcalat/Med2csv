@@ -24,7 +24,7 @@ import numpy as np
 
 
 def read_med(file,
-             phase,
+#             phase,
              finfo,
              path_tidy,
              var_cols=5,
@@ -52,7 +52,9 @@ def read_med(file,
     df = pd.read_csv(file, delim_whitespace=True, header=None,
                      skiprows=3, names=['x' + str(i) for i in range(1, ncols)])
 
-    subj = df.x2[2]
+    # RIval = df['x2'][df['x1'] == 'A:'].values[0]
+    # RIval = RIval.split('.')[0]
+   # subj = df.x2[2]
     subjf = finfo[0]
     session = finfo[1]
 
@@ -61,7 +63,7 @@ def read_med(file,
 
     # Check whether subj name in fname and inside file is the same,
     # otherwise break and check fname for errors
-    if subj != subjf or len(col_pos) != 1:
+    if len(col_pos) != 1: #subj != subjf or 
         print(f"Subject name in file {finfo} is wrong; or")
         print(f'{col_n} is not unique, possible error in {finfo}. Dup file?')
         stop = True
@@ -78,25 +80,30 @@ def read_med(file,
         vC = df[start:(end + 1)].reset_index(drop=True)
         vC = vC.drop('x1', 1).stack().reset_index(drop=True)  # dropna default True
 
-        vC = np.asarray(vC, dtype='float64', order=True)
+        vC = np.asarray(vC, dtype='float64', order='C')
         vC = pd.DataFrame({'vC': vC.astype(str)})
 
         vC2 = vC['vC'].str.split('.', expand=True)
         vC2 = np.asarray(vC2, dtype=np.float32).astype(int)
+        # Drop when time is 0
+        # boolean = np.where(vC2[:, 0] != 0)[0] - 1
+        # vC2 = vC2[boolean, :]
 
-        # Make a string of phase if phase is a list
-        if isinstance(phase, list):
-            phase = ''.join([str(i) for i in phase])
+#        # Make a string of phase if phase is a list
+#        if isinstance(phase, list):
+#            phase = ''.join([str(i) for i in phase])
 
         # File name to save in path_tidy. Fname is string of numbers.
         # See return in reference information.
 
-        fsave = path_tidy + str(phase) + str(subjf[1]) + str(session)
+        col = col_n.split(':')[0]
+
+        fsave = path_tidy + str(col) + str(subjf) + '-' + str(session)
         np.savetxt(fsave + '.csv', vC2, delimiter=',', fmt='%1.0f')
         # If saved, break while loop
         reach = True
         if reach:
-            print(finfo)
+            print(''.join(finfo))
             break
 
 
